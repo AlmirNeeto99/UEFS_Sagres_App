@@ -1,5 +1,6 @@
 package com.forcetower.uefs.sagres_sdk.parsers;
 
+import com.forcetower.uefs.database.entities.AScrap;
 import com.forcetower.uefs.sagres_sdk.domain.SagresMessage;
 
 import java.util.ArrayList;
@@ -15,8 +16,8 @@ public class SagresMessagesParser {
     private static final String MESSAGE_MESSAGE_RECEIVED = "class=\"recado-texto\">";
     private static final String MESSAGE_FROM_RECEIVED = "class=\"recado-remetente\">";
 
-    public static List<SagresMessage> getStartPageMessages(String html) {
-        List<SagresMessage> messages = new ArrayList<>();
+    public static List<AScrap> getStartPageScraps(String html) {
+        List<AScrap> messages = new ArrayList<>();
 
         int position = 0;
         boolean found = html.indexOf("<article id", position) != -1;
@@ -30,7 +31,7 @@ public class SagresMessagesParser {
 
             String article = html.substring(start, end);
 
-            SagresMessage message = extractInfoArticle(article);
+            AScrap message = extractInfoArticle(article);
             messages.add(message);
             position = end;
         }
@@ -38,12 +39,12 @@ public class SagresMessagesParser {
         return messages;
     }
 
-    private static SagresMessage extractInfoArticle(String article) {
+    private static AScrap extractInfoArticle(String article) {
         String clazz = extractArticleForm1(MESSAGE_CLASS_RECEIVED, article);
         String date = extractArticleForm1(MESSAGE_DATE_RECEIVED, article);
         String message = extractArticleForm2(MESSAGE_MESSAGE_RECEIVED, article);
         String from = extractArticleForm2(MESSAGE_FROM_RECEIVED, article);
-        return new SagresMessage(from, message, date, clazz);
+        return new AScrap(from, message, date, clazz);
     }
 
     private static String extractArticleForm2(String regex, String article) {

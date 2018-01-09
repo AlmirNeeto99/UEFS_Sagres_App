@@ -27,12 +27,11 @@ public class SagresClassParser {
     private static HashMap<String, SagresClass> codePerLessons;
     public static boolean failed;
 
-    public static HashMap<String, List<SagresClassDay>> getCompleteSchedule(String html) {
+    public static HashMap<String, List<SagresClassDay>> getCompleteSchedule(Document startPage) {
         iterationPerDay = new SparseArray<>();
         codePerLessons = new HashMap<>();
         failed = false;
 
-        Document startPage = Jsoup.parse(html);
         Element schedule = startPage.selectFirst("table[class=\"meus-horarios\"]");
         Element subtitle = startPage.selectFirst("table[class=\"meus-horarios-legenda\"]");
 

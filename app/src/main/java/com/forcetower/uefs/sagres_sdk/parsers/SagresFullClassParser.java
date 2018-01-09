@@ -86,107 +86,112 @@ public class SagresFullClassParser {
 
         Elements classes = document.select("section[class=\"webpart-aluno-item\"]");
         for (Element classDet : classes) {
-            String title = classDet.selectFirst("a[class=\"webpart-aluno-nome cor-destaque\"]").text();
-            String period = classDet.selectFirst("span[class=\"webpart-aluno-periodo\"]").text();
-            String credits = classDet.select("span[class=\"webpart-aluno-codigo\"]").text();
-            credits = credits.replaceAll("[^\\d]", "");
+            try {
+                String title = classDet.selectFirst("a[class=\"webpart-aluno-nome cor-destaque\"]").text();
+                String period = classDet.selectFirst("span[class=\"webpart-aluno-periodo\"]").text();
+                String credits = classDet.select("span[class=\"webpart-aluno-codigo\"]").text();
+                credits = credits.replaceAll("[^\\d]", "");
 
-            Element studentLinks = classDet.selectFirst("div[class=\"webpart-aluno-links webpart-aluno-links-up\"]");
-            if (studentLinks == null) studentLinks = classDet.selectFirst("div[class=\"webpart-aluno-links webpart-aluno-links-down\"]");
-            Element misses = studentLinks.child(1);
-            Element missesSpan = misses.selectFirst("span");
-            String missedClasses = missesSpan.text();
+                Element studentLinks = classDet.selectFirst("div[class=\"webpart-aluno-links webpart-aluno-links-up\"]");
+                if (studentLinks == null)
+                    studentLinks = classDet.selectFirst("div[class=\"webpart-aluno-links webpart-aluno-links-down\"]");
+                Element misses = studentLinks.child(1);
+                Element missesSpan = misses.selectFirst("span");
+                String missedClasses = missesSpan.text();
 
-            String last = "";
-            String next = "";
-            Elements lastAndNextClasses = classDet.select("div[class=\"webpart-aluno-detalhe\"]");
-            if (lastAndNextClasses.size() > 0) {
-                Element lastSpan = lastAndNextClasses.get(0).selectFirst("span");
-                last = lastSpan.text();
-            }
+                String last = "";
+                String next = "";
+                Elements lastAndNextClasses = classDet.select("div[class=\"webpart-aluno-detalhe\"]");
+                if (lastAndNextClasses.size() > 0) {
+                    Element lastSpan = lastAndNextClasses.get(0).selectFirst("span");
+                    last = lastSpan.text();
+                }
 
-            if (lastAndNextClasses.size() > 1) {
-                Element nextSpan = lastAndNextClasses.get(1).selectFirst("span");
-                next = nextSpan.text();
-            }
+                if (lastAndNextClasses.size() > 1) {
+                    Element nextSpan = lastAndNextClasses.get(1).selectFirst("span");
+                    next = nextSpan.text();
+                }
 
-            int codePos = title.indexOf("-");
-            String code = title.substring(0, codePos).trim();
-            String name = title.substring(codePos + 1);
+                int codePos = title.indexOf("-");
+                String code = title.substring(0, codePos).trim();
+                String name = title.substring(codePos + 1);
 
-            SagresClassDetails details = new SagresClassDetails(name, code);
-            details.setSemester(period);
-            details.setCredits(credits);
-            details.setMissedClasses(missedClasses);
-            details.setLastClass(last);
-            details.setNextClass(next);
+                SagresClassDetails details = new SagresClassDetails(name, code);
+                details.setSemester(period);
+                details.setCredits(credits);
+                details.setMissedClasses(missedClasses);
+                details.setLastClass(last);
+                details.setNextClass(next);
 
-            Elements elements = document.select("input[value][type=\"hidden\"]");
-            Element ul = classDet.selectFirst("ul");
+                Elements elements = document.select("input[value][type=\"hidden\"]");
+                Element ul = classDet.selectFirst("ul");
 
-            if (ul != null) {
-                Elements lis = ul.select("li");
-                for (Element li : lis) {
-                    Element element = li.selectFirst("a[href]");
-                    String values = element.attr("href");
+                if (ul != null) {
+                    Elements lis = ul.select("li");
+                    for (Element li : lis) {
+                        Element element = li.selectFirst("a[href]");
+                        String values = element.attr("href");
+                        int start = values.indexOf("'");
+                        values = values.substring(start + 1);
+                        int end = values.indexOf("'");
+
+                        values = values.substring(0, end);
+                        String type = element.text();
+                        int refGroupPos = type.lastIndexOf("(");
+                        type = type.substring(0, refGroupPos).trim();
+
+                        FormBody.Builder builderIn = new FormBody.Builder();
+                        for (Element elementIn : elements) {
+                            String key = elementIn.attr("id");
+                            String value = elementIn.attr("value");
+                            builderIn.add(key, value);
+                        }
+                        builderIn.add("__EVENTTARGET", values);
+                        if (specificSemester == null || period.equalsIgnoreCase(specificSemester)) {
+                            if (specificCode == null || code.equalsIgnoreCase(specificCode)) {
+                                if (specificGroup == null || type.equalsIgnoreCase(specificGroup)) {
+                                    builderList.add(new Pair<>(builderIn, period));
+                                }
+                            }
+                        }
+
+                        SagresClassGroup classGroup = new SagresClassGroup(null, type, null, null, null, null);
+                        classGroup.setSagresConnectCode(values);
+                        details.addGroup(classGroup);
+                    }
+                } else {
+                    Element webPart = classDet.selectFirst("div[class=\"webpart-dropdown webpart-dropdown-up\"]");
+                    Element anchor = webPart.selectFirst("a[href]");
+                    String values = anchor.attr("href");
                     int start = values.indexOf("'");
                     values = values.substring(start + 1);
                     int end = values.indexOf("'");
 
                     values = values.substring(0, end);
-                    String type = element.text();
-                    int refGroupPos = type.lastIndexOf("(");
-                    type = type.substring(0, refGroupPos).trim();
 
-                    FormBody.Builder builderIn = new FormBody.Builder();
-                    for (Element elementIn : elements) {
-                        String key = elementIn.attr("id");
-                        String value = elementIn.attr("value");
-                        builderIn.add(key, value);
+                    FormBody.Builder builder = new FormBody.Builder();
+                    builder.add("__EVENTTARGET", values);
+
+                    for (Element element : elements) {
+                        String key = element.attr("id");
+                        String value = element.attr("value");
+                        builder.add(key, value);
                     }
-                    builderIn.add("__EVENTTARGET", values);
                     if (specificSemester == null || period.equalsIgnoreCase(specificSemester)) {
                         if (specificCode == null || code.equalsIgnoreCase(specificCode)) {
-                            if (specificGroup == null || type.equalsIgnoreCase(specificGroup)) {
-                                builderList.add(new Pair<>(builderIn, period));
-                            }
+                            builderList.add(new Pair<>(builder, period));
                         }
                     }
 
-                    SagresClassGroup classGroup = new SagresClassGroup(null, type, null, null, null, null);
+                    SagresClassGroup classGroup = new SagresClassGroup(null, null, credits, null, null, null);
                     classGroup.setSagresConnectCode(values);
                     details.addGroup(classGroup);
                 }
-            } else {
-                Element webPart = classDet.selectFirst("div[class=\"webpart-dropdown webpart-dropdown-up\"]");
-                Element anchor = webPart.selectFirst("a[href]");
-                String values = anchor.attr("href");
-                int start = values.indexOf("'");
-                values = values.substring(start + 1);
-                int end = values.indexOf("'");
 
-                values = values.substring(0, end);
-
-                FormBody.Builder builder = new FormBody.Builder();
-                builder.add("__EVENTTARGET", values);
-
-                for (Element element : elements) {
-                    String key = element.attr("id");
-                    String value = element.attr("value");
-                    builder.add(key, value);
-                }
-                if (specificSemester == null || period.equalsIgnoreCase(specificSemester)) {
-                    if (specificCode == null ||code.equalsIgnoreCase(specificCode)) {
-                        builderList.add(new Pair<>(builder, period));
-                    }
-                }
-
-                SagresClassGroup classGroup = new SagresClassGroup(null, null, credits, null, null, null);
-                classGroup.setSagresConnectCode(values);
-                details.addGroup(classGroup);
+                classDetailsList.add(details);
+            } catch (Exception exx) {
+                exx.printStackTrace();
             }
-
-            classDetailsList.add(details);
         }
 
         if (!draftOnly) {

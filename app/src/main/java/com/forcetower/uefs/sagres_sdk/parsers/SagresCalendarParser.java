@@ -2,6 +2,7 @@ package com.forcetower.uefs.sagres_sdk.parsers;
 
 import android.util.Log;
 
+import com.forcetower.uefs.database.entities.ACalendarItem;
 import com.forcetower.uefs.sagres_sdk.SagresPortalSDK;
 import com.forcetower.uefs.sagres_sdk.domain.SagresCalendarItem;
 
@@ -12,23 +13,23 @@ import org.jsoup.nodes.Element;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.forcetower.uefs.Constants.APP_TAG;
+
 /**
  * Created by João Paulo on 02/12/2017.
  */
 public class SagresCalendarParser {
 
-    public static List<SagresCalendarItem> getCalendar(String html) {
-        List<SagresCalendarItem> items = new ArrayList<>();
-        Document document = Jsoup.parse(html);
+    public static List<ACalendarItem> getCalendar(Document document) {
+        List<ACalendarItem> items = new ArrayList<>();
+
         Element element = document.selectFirst("div[class=\"webpart-calendario\"]");
         if (element == null) {
-            Log.i(SagresPortalSDK.SAGRES_SDK_TAG, "Calendar doesn't exist for this person, v2 of app will fix it");
-            items.add(new SagresCalendarItem("15/12", "20/12", "Seu calendario não foi encontrado na pagina inicial do sagres. Este bug será corrigido depois dessa sexta feira, pois tenho prova e preciso estudar"));
             return items;
         }
 
         if (element.childNodeSize() < 2) {
-            Log.i(SagresPortalSDK.SAGRES_SDK_TAG, "Incorrect amount of children");
+            Log.i(APP_TAG, "Incorrect amount of children");
             return items;
         }
 
@@ -41,14 +42,7 @@ public class SagresCalendarParser {
             int index = text.indexOf("-");
             String days = text.substring(0, index);
             String event = text.substring(index + 1);
-            items.add(new SagresCalendarItem(days, null, event.trim()));
-            /*
-            if (days.contains("a")) {
-                String[] parts = days.split("a");
-                //items.add(new SagresCalendarItem(parts[0].trim(), parts[1].trim(), event));
-            } else {
-                items.add(new SagresCalendarItem(days, null, event));
-            }*/
+            items.add(new ACalendarItem(days, event.trim()));
         }
 
         return items;

@@ -80,7 +80,7 @@ public class SagresGradesParser {
         try {
             Response response = SagresPortalSDK.getHttpClient().newCall(request).execute();
             String htmlSemester = response.body().string();
-            return extractGrades(htmlSemester).second;
+            return extractGrades(Jsoup.parse(htmlSemester)).second;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -88,10 +88,8 @@ public class SagresGradesParser {
         return null;
     }
 
-    public static Pair<SagresSemester, List<SagresGrade>> extractGrades(String htmlSemester) {
+    public static Pair<SagresSemester, List<SagresGrade>> extractGrades(Document html) {
         List<SagresGrade> grades = new ArrayList<>();
-
-        Document html = Jsoup.parse(htmlSemester);
         Element gradesDiv = html.selectFirst("div[id=\"divBoletins\"]");
         if (gradesDiv == null) {
             Log.e(SagresPortalSDK.SAGRES_SDK_TAG, "Div boletins not found");
